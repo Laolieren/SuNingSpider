@@ -2,7 +2,7 @@
 import scrapy
 from SuningSpider.items import SuningspiderItem
 import re
-
+import copy
 
 class BookspiderSpider(scrapy.Spider):
     name = "bookspider"
@@ -23,7 +23,7 @@ class BookspiderSpider(scrapy.Spider):
                 yield scrapy.Request(
                     item['detail_title_url'],
                     callback=self.book_list,
-                    meta={'item': item}
+                    meta={'item': copy.deepcopy(item)}
                 )
 
 
@@ -33,21 +33,22 @@ class BookspiderSpider(scrapy.Spider):
         for book_detail in book_detail_list:
             item['book_name'] = book_detail.xpath(".//div[@class='book-title']/a/@title").extract_first()
             item['book_info'] = book_detail.xpath(".//div[@class='book-descrip c6']/text()").extract_first()
-            item['book_image'] = book_detail.xpath(".//div[@class='book-img']//img/@src").extract_first()
+            item['book_image'] = book_detail.xpath(".//div[@class='book-img']//img/@src|.//div[@class='book-img']//img/@src2").extract_first()
             item['book_author'] = book_detail.xpath(".//div[@class='book-author']/a/text()").extract_first()
             item['book_url'] = book_detail.xpath(".//div[@class='book-title']/a/@href").extract_first()
             yield scrapy.Request(
                 item['book_url'],
                 callback=self.book_detail,
-                meta={'item': item}
+                meta={'item': copy.deepcopy(item)}
             )
-        pagecount = re.findall(r'var pagecount=(.*?);', response.body.decode()[0])
-        current_page = re.findall(r'var currentPage=(.*?);', response.body.decode()[0])
-        if current_page < pagecount:
+        page_count = int(re.findall(r'var pagecount=(.*?);', response.body.decode()[0]))
+        current_page = int(re.findall(r'var currentPage=(.*?);', response.body.decode()[0]))
+        if current_page < page_count:
             next_url = item['detail_title_url'] + '?pageNumber={}&sort=0'.format(current_page + 1)
             yield scrapy.Request(
                 next_url,
-                callback=self.book_list
+                callback=self.book_list,
+                meta = {'item': copy.deepcopy(item)}
             )
 
     def book_detail(self, response):
