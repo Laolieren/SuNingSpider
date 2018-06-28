@@ -41,8 +41,8 @@ class BookspiderSpider(scrapy.Spider):
                 callback=self.book_detail,
                 meta={'item': copy.deepcopy(item)}
             )
-        page_count = int(re.findall(r'var pagecount=(.*?);', response.body.decode()[0]))
-        current_page = int(re.findall(r'var currentPage=(.*?);', response.body.decode()[0]))
+        page_count = int(re.findall(r'var pagecount=(.*?);', response.body.decode())[0])
+        current_page = int(re.findall(r'var currentPage=(.*?);', response.body.decode())[0])
         if current_page < page_count:
             next_url = item['detail_title_url'] + '?pageNumber={}&sort=0'.format(current_page + 1)
             yield scrapy.Request(
